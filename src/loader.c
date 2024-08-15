@@ -81,7 +81,7 @@ void load_obj(char *path) {
     fclose(file);
 }
 
-int main(int argc, char *argv[]) {
+int not_main(int argc, char *argv[]) {
     if (argc < 2) {
         load_obj("./assets/cube.obj");
     } else {
