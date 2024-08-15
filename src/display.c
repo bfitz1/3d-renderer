@@ -62,12 +62,38 @@ void draw_pixel(int x, int y, uint32_t color) {
     }
 }
 
-void draw_rect(int posx, int posy, int width, int height, uint32_t fill) {
+void draw_line(int x0, int y0, int x1, int y1, uint32_t color) {
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+
+    int longest_side_length = abs(dx) >= abs(dy) ? abs(dx) : abs(dy);
+
+    // Increment for each step (at least one of these has a step of 1)
+    float x_inc = dx / (float)longest_side_length;
+    float y_inc = dy / (float)longest_side_length;
+
+    float current_x = x0;
+    float current_y = y0;
+
+    for (int i = 0; i <= longest_side_length; i++) {
+        draw_pixel(round(current_x), round(current_y), color);
+        current_x += x_inc;
+        current_y += y_inc;
+    }
+}
+
+void draw_rect(int posx, int posy, int width, int height, uint32_t color) {
     for (int y = posy; y < posy + height; y += 1) {
         for (int x = posx; x < posx + width; x += 1) {
-            draw_pixel(x, y, fill);
+            draw_pixel(x, y, color);
         }
     }
+}
+
+void draw_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
+    draw_line(x0, y0, x1, y1, color);
+    draw_line(x1, y1, x2, y2, color);
+    draw_line(x2, y2, x0, y0, color);
 }
 
 void render_color_buffer(void) {
