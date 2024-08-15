@@ -50,3 +50,9 @@ void load_cube_mesh_data(void) {
         array_push(mesh.faces, cube_face);
     }
 }
+
+void load_obj_file_data(char *filename) {
+    // TODO: Read the contents of the .obj file
+    // and load the vertices and faces in 
+    // out mesh.vertices and mesh.faces
+}
