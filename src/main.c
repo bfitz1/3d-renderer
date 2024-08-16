@@ -12,8 +12,7 @@
 //triangle_t triangles_to_render[N_MESH_FACES];
 triangle_t *triangles_to_render = NULL;
 
-vec3_t camera_position = { .x = 0, .y = 0, .z = -5 };
-// vec3_t cube_rotation = { .x = 0, .y = 0, .z = 0 };
+vec3_t camera_position = { .x = 0, .y = 0, .z = 0 };
 
 float fov_factor = 640;
 
@@ -35,14 +34,7 @@ void setup(void) {
 
     // Load the cube values in the mesh data structure
     // load_cube_mesh_data();
-    load_obj_file_data("./assets/f22.obj");
-
-    vec3_t a = { 2.5, 6.4, 3.0 };
-    vec3_t b = { -2.2, 1.4, -1.0 };
-
-    float a_len = vec3_length(a);
-    float b_len = vec3_length(b);
-    vec3_t add_ab = vec3_add(a, b);
+    load_obj_file_data("./assets/cube.obj");
 }
 
 void process_input(void) {
@@ -89,8 +81,8 @@ void update(void) {
     triangles_to_render = NULL;
 
     mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.;
-    mesh.rotation.z += 0.;
+    mesh.rotation.y += 0.01;
+    mesh.rotation.z += 0.01;
 
     // Loop all triangle faces
     int num_faces = array_length(mesh.faces);
@@ -104,6 +96,8 @@ void update(void) {
 
         triangle_t projected_triangle;
 
+        vec3_t transformed_vertices[3];
+
         // Loop all three vertices of this current face and apply transformations
         for (int j = 0; j < 3; j++) {
             vec3_t transformed_vertex = face_vertices[j];
@@ -113,10 +107,42 @@ void update(void) {
             transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
             // Translate the vertex away from the camera
-            transformed_vertex.z -= camera_position.z;
+            transformed_vertex.z += 5;
 
+            // Save transformed vertex in the array of transformed vertices
+            transformed_vertices[j] = transformed_vertex;
+        }
+
+        // Check backface culling
+        // Something I didn't realize earlier but is worth stating explicity:
+        // Assume that A -> B -> C is a clockwise rotation
+        vec3_t vector_a = transformed_vertices[0];
+        vec3_t vector_b = transformed_vertices[1];
+        vec3_t vector_c = transformed_vertices[2];
+
+        // Get the vector subtraction of B - A, and C - A
+        vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+        vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+
+        // Compute the face normal using the cross product
+        // IMPORTANT: The order of vectors depends on the coordinate system handedness!
+        vec3_t normal = vec3_cross(vector_ab, vector_ac);
+
+        // Get the camera ray vector
+        vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+
+        // Compute alignment of camera ray and face normal using the dot product
+        float dot_normal_camera = vec3_dot(normal, camera_ray);
+
+        // Bypass triangles looking away from the camera
+        if (dot_normal_camera < 0) {
+            continue;
+        }
+
+        // Loop all three vertices to perform projection
+        for (int j = 0; j < 3; j++) {
             // Project the current vertex
-            vec2_t projected_point = project(transformed_vertex);
+            vec2_t projected_point = project(transformed_vertices[j]);
 
             // Scale and translate projected point to the middle of the screen
             projected_point.x += (window_width / 2);
