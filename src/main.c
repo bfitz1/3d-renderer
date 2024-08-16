@@ -122,11 +122,14 @@ void update(void) {
 
         // Get the vector subtraction of B - A, and C - A
         vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+        vec3_normalize(&vector_ab);
         vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+        vec3_normalize(&vector_ac);
 
         // Compute the face normal using the cross product
         // IMPORTANT: The order of vectors depends on the coordinate system handedness!
         vec3_t normal = vec3_cross(vector_ab, vector_ac);
+        vec3_normalize(&normal);
 
         // Get the camera ray vector
         vec3_t camera_ray = vec3_sub(camera_position, vector_a);
