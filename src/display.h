@@ -7,6 +7,20 @@
 #define FPS 60
 #define FRAME_TARGET_TIME (1000 / FPS)
 
+// Test for display modes work with bit twiddling
+enum display_mode { 
+    MODE_DOT = 0x1,
+    MODE_WIRE = 0x2,
+    MODE_SOLID = 0x4,
+    MODE_WIREDOT = MODE_DOT | MODE_WIRE,
+    MODE_SOLIDWIRE = MODE_SOLID | MODE_WIRE
+} display_mode;
+
+// I _could_ pull this into the enum, but since the presented options
+// are intended to be mutually exclusive it leads to a bunch of cases
+// which are awkward to toggle.
+bool cull_backfaces;
+
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
 extern uint32_t *color_buffer;
