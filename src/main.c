@@ -80,9 +80,9 @@ void update(void) {
     // Initialize the array of triangles to render
     triangles_to_render = NULL;
 
-    mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.01;
-    mesh.rotation.z += 0.01;
+    mesh.rotation.x += 0.005;
+    mesh.rotation.y += 0.005;
+    mesh.rotation.z += 0.005;
 
     // Loop all triangle faces
     int num_faces = array_length(mesh.faces);
@@ -175,6 +175,16 @@ void render(void) {
         draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
 
         // Connect points in the triangle
+        draw_filled_triangle(
+            triangle.points[0].x,
+            triangle.points[0].y,
+            triangle.points[1].x,
+            triangle.points[1].y,
+            triangle.points[2].x,
+            triangle.points[2].y,
+            0xFFFFFFFF
+        );
+
         draw_triangle(
             triangle.points[0].x,
             triangle.points[0].y,
@@ -182,9 +192,12 @@ void render(void) {
             triangle.points[1].y,
             triangle.points[2].x,
             triangle.points[2].y,
-            0xFF0000FF
+            0xFF000000
         );
     }
+
+    // draw_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
+    // draw_filled_triangle(300, 100, 50, 400, 500, 700, 0xFF00FF00);
 
     // Clear the array of triangles to render every frame loop
     array_free(triangles_to_render);
