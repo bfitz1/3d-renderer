@@ -71,3 +71,15 @@ vec4_t mat4_mul_vec4(mat4_t m, vec4_t v) {
     result.w = m.m[3][0] * v.x + m.m[3][1] * v.y + m.m[3][2] * v.z + m.m[3][3] * v.w;
     return result;
 }
+
+mat4_t mat4_mul_mat4(mat4_t a, mat4_t b) {
+    mat4_t m = {0};
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            for (int k = 0; k < 4; k++) {
+                m.m[i][j] += a.m[i][k] * b.m[k][j];
+            }
+        }
+    }
+    return m;
+}
