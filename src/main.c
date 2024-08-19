@@ -98,16 +98,19 @@ void update(void) {
     // Initialize the array of triangles to render
     triangles_to_render = NULL;
 
-    // mesh.rotation.x += 0.01;
-    // mesh.rotation.y += 0.01;
-    // mesh.rotation.z += 0.01;
-    mesh.scale.x += 0.002;
-    mesh.scale.y += 0.001;
+    mesh.rotation.x += 0.01;
+    mesh.rotation.y += 0.01;
+    mesh.rotation.z += 0.01;
+    // mesh.scale.x += 0.002;
+    // mesh.scale.y += 0.001;
     mesh.translation.x += 0.01;
     mesh.translation.z = 5.0;
 
     // Create a scale and translation matrix that will be used to multiply the mesh vertices
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+    mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
+    mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
+    mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
     mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
 
     // Loop all triangle faces
@@ -126,14 +129,12 @@ void update(void) {
         for (int j = 0; j < 3; j++) {
             vec4_t transformed_vertex = vec4_from_vec3(face_vertices[j]);
 
-            // Multiply the vertex by the scale_matrix
+            // Multiply the vertex by the scale, translation, and rotation matrices
             transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
+            transformed_vertex = mat4_mul_vec4(rotation_matrix_x, transformed_vertex);
+            transformed_vertex = mat4_mul_vec4(rotation_matrix_y, transformed_vertex);
+            transformed_vertex = mat4_mul_vec4(rotation_matrix_z, transformed_vertex);
             transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
-
-            // TODO: Use a matrix to scale our original vertex
-            // transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
-            // transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
-            // transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
             // Save transformed vertex in the array of transformed vertices
             transformed_vertices[j] = transformed_vertex;
