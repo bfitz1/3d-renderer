@@ -1,15 +1,16 @@
 #pragma once
 
 typedef struct {
-    float x;
-    float y;
+    float x, y;
 } vec2_t;
 
 typedef struct {
-    float x;
-    float y;
-    float z;
+    float x, y, z;
 } vec3_t;
+
+typedef struct {
+    float x, y, z, w;
+} vec4_t;
 
 // 2D vector functions
 float vec2_length(vec2_t v);
@@ -33,3 +34,7 @@ void vec3_normalize(vec3_t *v);
 vec3_t vec3_rotate_x(vec3_t v, float angle);
 vec3_t vec3_rotate_y(vec3_t v, float angle);
 vec3_t vec3_rotate_z(vec3_t v, float angle);
+
+// 4D vector functions
+vec4_t vec4_from_vec3(vec3_t v);
+vec3_t vec3_from_vec4(vec4_t v);
