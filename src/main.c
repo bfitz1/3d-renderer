@@ -22,8 +22,8 @@ int previous_frame_time = 0;
 
 void setup(void) {
     // Configure some render options
-    display_mode = MODE_SOLIDWIRE;
-    cull_backfaces = true;
+    display_mode = MODE_WIREDOT;
+    cull_backfaces = false;
 
     // Allocate memory (in bytes) to hold the color buffer
     color_buffer = (uint32_t *) malloc(sizeof (uint32_t) * window_width * window_height);
@@ -98,15 +98,17 @@ void update(void) {
     // Initialize the array of triangles to render
     triangles_to_render = NULL;
 
-    mesh.rotation.x += 0.01;
-    mesh.rotation.y += 0.01;
-    mesh.rotation.z += 0.01;
-
+    // mesh.rotation.x += 0.01;
+    // mesh.rotation.y += 0.01;
+    // mesh.rotation.z += 0.01;
     mesh.scale.x += 0.002;
     mesh.scale.y += 0.001;
+    mesh.translation.x += 0.01;
+    mesh.translation.z = 5.0;
 
-    // Create a scale matrix that will be used to multiply the mesh vertices
+    // Create a scale and translation matrix that will be used to multiply the mesh vertices
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+    mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
 
     // Loop all triangle faces
     int num_faces = array_length(mesh.faces);
@@ -124,16 +126,14 @@ void update(void) {
         for (int j = 0; j < 3; j++) {
             vec4_t transformed_vertex = vec4_from_vec3(face_vertices[j]);
 
-            // TODO: multiply the vertex by the scale_matrix
+            // Multiply the vertex by the scale_matrix
             transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
+            transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
 
             // TODO: Use a matrix to scale our original vertex
             // transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
             // transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
             // transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
-
-            // Translate the vertex away from the camera
-            transformed_vertex.z += 5;
 
             // Save transformed vertex in the array of transformed vertices
             transformed_vertices[j] = transformed_vertex;
