@@ -102,6 +102,7 @@ static face_t obj_file_parse_face(char *line) {
         .a = face_data[0],
         .b = face_data[1],
         .c = face_data[2],
+        .color = 0xFFFFFFFF, // Wasn't addressed yet!
     };
 }
 

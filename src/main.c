@@ -10,6 +10,7 @@
 #include "triangle.h"
 #include "array.h"
 #include "matrix.h"
+#include "light.h"
 
 triangle_t *triangles_to_render = NULL;
 
@@ -21,8 +22,8 @@ int previous_frame_time = 0;
 
 void setup(void) {
     // Configure some render options
-    display_mode = MODE_WIREDOT;
-    cull_backfaces = false;
+    display_mode = MODE_SOLID;
+    cull_backfaces = true;
 
     // Allocate memory (in bytes) to hold the color buffer
     color_buffer = (uint32_t *) malloc(sizeof (uint32_t) * window_width * window_height);
@@ -44,8 +45,8 @@ void setup(void) {
     proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
 
     // Load the cube values in the mesh data structure
-    load_cube_mesh_data();
-    // load_obj_file_data("./assets/cube.obj");
+    // load_cube_mesh_data();
+    load_obj_file_data("./assets/f22.obj");
 }
 
 void process_input(void) {
@@ -76,18 +77,6 @@ void process_input(void) {
         break;
     }
 }
-
-// Function that receives a 3D vector and returns a projected 2D point
-/*
-vec2_t project(vec3_t point) {
-    vec2_t projected_point = {
-        .x = (fov_factor * point.x) / point.z,
-        .y = (fov_factor * point.y) / point.z,
-    };
-
-    return projected_point;
-}
-*/
 
 void update(void) {
     // It's a black box, but it's preferable to just spinning the CPU uselessly
@@ -153,31 +142,31 @@ void update(void) {
             transformed_vertices[j] = transformed_vertex;
         }
 
+        // Check backface culling
+        // Something I didn't realize earlier but is worth stating explicity:
+        // Assume that A -> B -> C is a clockwise rotation
+        vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]);
+        vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]);
+        vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]);
+
+        // Get the vector subtraction of B - A, and C - A
+        vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+        vec3_normalize(&vector_ab);
+        vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+        vec3_normalize(&vector_ac);
+
+        // Compute the face normal using the cross product
+        // IMPORTANT: The order of vectors depends on the coordinate system handedness!
+        vec3_t normal = vec3_cross(vector_ab, vector_ac);
+        vec3_normalize(&normal);
+
+        // Get the camera ray vector
+        vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+
+        // Compute alignment of camera ray and face normal using the dot product
+        float dot_normal_camera = vec3_dot(normal, camera_ray);
+
         if (cull_backfaces) {
-            // Check backface culling
-            // Something I didn't realize earlier but is worth stating explicity:
-            // Assume that A -> B -> C is a clockwise rotation
-            vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]);
-            vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]);
-            vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]);
-
-            // Get the vector subtraction of B - A, and C - A
-            vec3_t vector_ab = vec3_sub(vector_b, vector_a);
-            vec3_normalize(&vector_ab);
-            vec3_t vector_ac = vec3_sub(vector_c, vector_a);
-            vec3_normalize(&vector_ac);
-
-            // Compute the face normal using the cross product
-            // IMPORTANT: The order of vectors depends on the coordinate system handedness!
-            vec3_t normal = vec3_cross(vector_ab, vector_ac);
-            vec3_normalize(&normal);
-
-            // Get the camera ray vector
-            vec3_t camera_ray = vec3_sub(camera_position, vector_a);
-
-            // Compute alignment of camera ray and face normal using the dot product
-            float dot_normal_camera = vec3_dot(normal, camera_ray);
-
             // Bypass triangles looking away from the camera
             if (dot_normal_camera < 0) {
                 continue;
@@ -200,6 +189,11 @@ void update(void) {
             projected_points[j].y += (window_height / 2.);
         }
 
+        // Calculate the color intensity based on (inverted) light sources and face normals
+        float dot_normal_light = vec3_dot(normal, light.direction);
+        float intensity = -dot_normal_light;
+        uint32_t color = light_apply_intensity(mesh_face.color, intensity);
+
         // Calculate the average depth for each face based on the vertices
         // after transformation
         float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
@@ -210,7 +204,7 @@ void update(void) {
                 { projected_points[1].x, projected_points[1].y },
                 { projected_points[2].x, projected_points[2].y },
             },
-            .color = mesh_face.color,
+            .color = color,
             .avg_depth = avg_depth,
         };
 
@@ -268,7 +262,7 @@ void render(void) {
                 triangle.points[1].y,
                 triangle.points[2].x,
                 triangle.points[2].y,
-                0xFF00FF00
+                0xFFFFFFFF
             );
         }
     }
