@@ -12,8 +12,10 @@ enum display_mode {
     MODE_DOT = 0x1,
     MODE_WIRE = 0x2,
     MODE_SOLID = 0x4,
+    MODE_TEXTURE = 0x8,
     MODE_WIREDOT = MODE_DOT | MODE_WIRE,
-    MODE_SOLIDWIRE = MODE_SOLID | MODE_WIRE
+    MODE_SOLIDWIRE = MODE_SOLID | MODE_WIRE,
+    MODE_TEXTUREWIRE = MODE_TEXTURE | MODE_WIRE,
 } display_mode;
 
 // I _could_ pull this into the enum, but since the presented options
