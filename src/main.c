@@ -211,9 +211,9 @@ void update(void) {
 
         triangle_t projected_triangle = {
             .points = {
-                { projected_points[0].x, projected_points[0].y },
-                { projected_points[1].x, projected_points[1].y },
-                { projected_points[2].x, projected_points[2].y },
+                { projected_points[0].x, projected_points[0].y, projected_points[0].z, projected_points[0].w },
+                { projected_points[1].x, projected_points[1].y, projected_points[1].z, projected_points[1].w },
+                { projected_points[2].x, projected_points[2].y, projected_points[2].z, projected_points[2].w },
             },
             .texcoords = {
                 { mesh_face.a_uv.u, mesh_face.a_uv.v },
@@ -250,13 +250,6 @@ void render(void) {
     for (int i = 0; i < num_triangles; i++) {
         triangle_t triangle = triangles_to_render[i];
 
-        if (display_mode & MODE_DOT) {
-            // Draw vertex points
-            draw_rect(triangle.points[0].x, triangle.points[0].y, 6, 6, 0xFFFF0000);
-            draw_rect(triangle.points[1].x, triangle.points[1].y, 6, 6, 0xFFFF0000);
-            draw_rect(triangle.points[2].x, triangle.points[2].y, 6, 6, 0xFFFF0000);
-        }
-
         if (display_mode & MODE_SOLID) {
             // Connect points in the triangle
             draw_filled_triangle(
@@ -267,6 +260,34 @@ void render(void) {
                 triangle.points[2].x,
                 triangle.points[2].y,
                 triangle.color
+            );
+        }
+
+        if (display_mode & MODE_TEXTURE) {
+            draw_textured_triangle(
+                // P0
+                triangle.points[0].x,
+                triangle.points[0].y,
+                triangle.points[0].z,
+                triangle.points[0].w,
+                triangle.texcoords[0].u,
+                triangle.texcoords[0].v,
+                // P1
+                triangle.points[1].x,
+                triangle.points[1].y,
+                triangle.points[1].z,
+                triangle.points[1].w,
+                triangle.texcoords[1].u,
+                triangle.texcoords[1].v,
+                // P2
+                triangle.points[2].x,
+                triangle.points[2].y,
+                triangle.points[2].z,
+                triangle.points[2].w,
+                triangle.texcoords[2].u,
+                triangle.texcoords[2].v,
+                // Texture
+                mesh_texture
             );
         }
 
@@ -282,14 +303,13 @@ void render(void) {
             );
         }
 
-        if (display_mode & MODE_TEXTURE) {
-            draw_textured_triangle(
-                triangle.points[0].x, triangle.points[0].y, triangle.texcoords[0].u, triangle.texcoords[0].v,
-                triangle.points[1].x, triangle.points[1].y, triangle.texcoords[1].u, triangle.texcoords[1].v,
-                triangle.points[2].x, triangle.points[2].y, triangle.texcoords[2].u, triangle.texcoords[2].v,
-                mesh_texture
-            );
+        if (display_mode & MODE_DOT) {
+            // Draw vertex points
+            draw_rect(triangle.points[0].x, triangle.points[0].y, 6, 6, 0xFFFF0000);
+            draw_rect(triangle.points[1].x, triangle.points[1].y, 6, 6, 0xFFFF0000);
+            draw_rect(triangle.points[2].x, triangle.points[2].y, 6, 6, 0xFFFF0000);
         }
+
     }
 
     // Clear the array of triangles to render every frame loop
