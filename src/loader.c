@@ -8,7 +8,7 @@ void parse_vertex(char *line) {
     // We know vertices have the format:
     // v <f> <f> <f> \0
     // After "v ", scan for " ", place a null terminator, read the float
-    printf("v [ ");
+    printf("v=[ ");
     char *sub = line + 2;
     char *ptr = strchr(sub, ' ');
     while (ptr) {
@@ -21,20 +21,53 @@ void parse_vertex(char *line) {
 }
 
 void parse_face(char *line) {
-    // We know faces have the format:
-    // f d/d/d d/d/d d/d/d \0
+    // Big change! Be able to handle four possible formats:
+    // - Case 1: Vertex faces only
+    //   f v1 v2 v3 \0
+    // - Case 2: Vertex faces and textures
+    //   f v1/vt1 v2/vt2 v3/vt3 \0
+    // - Case 3: Vertex faces, textures and normals
+    //   f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3 \0
+    // - Case 4: Vertices and Normals
+    //   f v1//vn1 v2//vn2 v3//vn3 \0
+    //
+
     // We're only interested in the first number of each triple
     // After "f ", scan for "/", place a null terminator, read the decimal,
     // reset after " "
 
-    printf("f [ ");
+    printf("f=[ ");
     char *sub = line + 2;
-    char *ptr = strchr(sub, '/');
+    char *ptr = strchr(sub, ' ');
+    int i = 1;
     while (ptr) {
         *ptr = 0;
-        printf("%d ", atoi(sub));
-        sub = strchr(ptr + 1, ' ') + 1;
-        ptr = strchr(sub, '/');
+        char *s = strchr(sub, '/');
+        if (s == NULL) { // Case 1
+            printf("v%d=%d ", i, atoi(sub));
+        } else if (strchr(s + 1, '/') == NULL) { // Case 2
+            *s = 0;
+            printf("v%d=%d ", i, atoi(sub));
+            sub = s + 1;
+            printf("vt%d=%d ", i, atoi(sub));
+        } else if (strchr(s + 1, '/') == s + 1) { // Case 4
+            *s = 0;
+            printf("v%d=%d ", i, atoi(sub));
+            sub = s + 2;
+            printf("vn%d=%d ", i, atoi(sub));
+        } else { // Case 3
+            *s = 0;
+            printf("v%d=%d ", i, atoi(sub));
+            sub = s + 1;
+            s = strchr(sub, '/');
+            *s = 0;
+            printf("vt%d=%d ", i, atoi(sub));
+            sub = s + 1;
+            printf("vn%d=%d ", i, atoi(sub));
+        }
+        sub = ptr + 1;
+        ptr = strchr(sub, ' ');
+        i += 1;
     }
     printf("]\n");
 }
@@ -61,9 +94,9 @@ void load_obj(char *path) {
         if (c == '\n' || c == EOF) {
             line[i] = ' ';
             line[i+1] = '\0';
-            if (strstr(line, "v ") == line) {
+            if (strncmp(line, "v ", 2) == 0) {
                 parse_vertex(line);
-            } else if (strstr(line, "f ") == line) {
+            } else if (strncmp(line, "f ", 2) == 0) {
                 parse_face(line);
             }
             i = 0;
@@ -81,7 +114,7 @@ void load_obj(char *path) {
     fclose(file);
 }
 
-int not_main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 2) {
         load_obj("./assets/cube.obj");
     } else {
