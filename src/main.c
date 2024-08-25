@@ -12,6 +12,7 @@
 #include "matrix.h"
 #include "light.h"
 #include "texture.h"
+#include "upng.h"
 
 triangle_t *triangles_to_render = NULL;
 
@@ -32,7 +33,7 @@ void setup(void) {
     // Create an SDL texture to display the color buffer
     color_buffer_texture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         window_width,
         window_height
@@ -46,11 +47,14 @@ void setup(void) {
     proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
 
     // Manually load the hardcoded texture data from the static array
-    mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
+    // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
 
     // Load the cube values in the mesh data structure
-    load_cube_mesh_data();
-    // load_obj_file_data("./assets/f22.obj");
+    // load_cube_mesh_data();
+    load_obj_file_data("./assets/cube.obj");
+
+    // Load the texture information from an external PNG file
+    load_png_texture_data("./assets/cube.png");
 }
 
 void process_input(void) {
@@ -103,9 +107,9 @@ void update(void) {
     // Initialize the array of triangles to render
     triangles_to_render = NULL;
 
-    mesh.rotation.x += 0.005;
+    //mesh.rotation.x += 0.005;
     mesh.rotation.y += 0.003;
-    mesh.rotation.z += 0.002;
+    //mesh.rotation.z += 0.002;
     // mesh.scale.x += 0.002;
     // mesh.scale.y += 0.001;
     // mesh.translation.x += 0.01;
@@ -324,6 +328,7 @@ void render(void) {
 // Free any dynamically-allocated memory
 void free_resources(void) {
     free(color_buffer);
+    upng_free(png_texture);
     array_free(mesh.faces);
     array_free(mesh.vertices);
 }
