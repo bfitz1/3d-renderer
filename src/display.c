@@ -56,6 +56,16 @@ void draw_grid(int gridsize) {
     }
 }
 
+void draw_checker(int tilesize) {
+    for (int y = 0; y < window_height / tilesize; y++) {
+        for (int x = 0; x < window_width / tilesize; x++) {
+            if (x % 2 == y % 2) {
+                draw_rect(x * tilesize, y * tilesize, tilesize, tilesize, 0xFF151515);
+            }
+        }
+    }
+}
+
 void draw_pixel(int x, int y, uint32_t color) {
     if (x >= 0 && x < window_width && y >= 0 && y < window_height) {
         color_buffer[window_width * y + x] = color;

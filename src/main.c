@@ -243,7 +243,7 @@ void update(void) {
 void render(void) {
     SDL_RenderClear(renderer);
 
-    draw_grid(30);
+    draw_checker(180 / 4 /* GCD scaled down */);
 
     // Loop all projected points and render them
     int num_triangles = array_length(triangles_to_render);
