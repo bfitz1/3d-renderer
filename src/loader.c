@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mesh.h"
+#define MAX_BUFFER_SIZE 512
 
 void parse_vertex(char *line) {
     // We know vertices have the format:
@@ -10,6 +10,21 @@ void parse_vertex(char *line) {
     // After "v ", scan for " ", place a null terminator, read the float
     printf("v=[ ");
     char *sub = line + 2;
+    char *ptr = strchr(sub, ' ');
+    while (ptr) {
+        *ptr = 0;
+        printf("%f ", atof(sub));
+        sub = ptr + 1;
+        ptr = strchr(sub, ' ');
+    }
+    printf("]\n");
+}
+
+void parse_texture_coordinate(char *line) {
+    // We know texture coordinates have the format:
+    // vt f f f \0
+    printf("vt=[ ");
+    char *sub = line + 3;
     char *ptr = strchr(sub, ' ');
     while (ptr) {
         *ptr = 0;
@@ -73,48 +88,31 @@ void parse_face(char *line) {
 }
 
 void load_obj(char *path) {
-    // For now:
-    // 1. Open the file
-    // 2. For each line
-    // 2.1 Read line
-    // 2.2 Prine line
-    // 3. Close the file
-
     FILE *file = fopen(path, "r");
     if (!file) {
         fprintf(stderr, "oh no file no open\n");
         exit(1);
     }
 
-    char line[128] = {0};
-    int i = 0;
-    int c;
-    while (i < 128-2) { // Reserve two spaces for my own use
-        c = fgetc(file);
-        if (c == '\n' || c == EOF) {
-            line[i] = ' ';
-            line[i+1] = '\0';
-            if (strncmp(line, "v ", 2) == 0) {
-                parse_vertex(line);
-            } else if (strncmp(line, "f ", 2) == 0) {
-                parse_face(line);
-            }
-            i = 0;
-            if (c == EOF) break;
-        } else {
-            line[i++] = c;
-        }            
-    }
+    char line[MAX_BUFFER_SIZE] = {0};
 
-    if (i >= 128-2) {
-        fprintf(stderr, "truncated the input; look into that\n");
-        exit(1);
+    char *result = fgets(line, MAX_BUFFER_SIZE-2, file);
+    while (result) {
+        int len = strlen(line);
+        line[len] = ' ';
+        line[len + 1] = '\0';
+
+        if (strncmp(line, "v ", 2) == 0)  parse_vertex(line);
+        if (strncmp(line, "vt ", 3) == 0) parse_texture_coordinate(line);
+        if (strncmp(line, "f ", 2) == 0)  parse_face(line);
+
+        result = fgets(line, MAX_BUFFER_SIZE-2, file);
     }
 
     fclose(file);
 }
 
-int main(int argc, char *argv[]) {
+int not_main(int argc, char *argv[]) {
     if (argc < 2) {
         load_obj("./assets/cube.obj");
     } else {
