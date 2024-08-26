@@ -26,6 +26,7 @@ void setup(char *model, char *texture) {
     // Configure some render options
     display_mode = MODE_SOLID;
     cull_backfaces = true;
+    show_depth = false;
 
     // Allocate memory (in bytes) to hold the color buffer
     color_buffer = (uint32_t *) malloc(sizeof(uint32_t) * window_width * window_height);
@@ -83,9 +84,9 @@ void process_input(void) {
         case SDLK_6:
             display_mode = MODE_TEXTUREWIRE; break;
         case SDLK_c:
-            cull_backfaces = true; break;
-        case SDLK_d:
-            cull_backfaces = false; break;
+            cull_backfaces = !cull_backfaces; break;
+        case SDLK_z:
+            show_depth = !show_depth; break;
         }
         break;
     }
@@ -109,8 +110,8 @@ void update(void) {
     triangles_to_render = NULL;
 
     mesh.rotation.x += 0.005;
-    // mesh.rotation.y += 0.003;
-    // mesh.rotation.z += 0.002;
+    mesh.rotation.y += 0.003;
+    mesh.rotation.z += 0.002;
     // mesh.scale.x += 0.002;
     // mesh.scale.y += 0.001;
     // mesh.translation.x += 0.01;
@@ -320,7 +321,11 @@ void render(void) {
     // Clear the array of triangles to render every frame loop
     array_free(triangles_to_render);
 
-    render_color_buffer();
+    if (show_depth) {
+        render_z_buffer();
+    } else {
+        render_color_buffer();
+    }
 
     clear_color_buffer(0xFF000000);
     clear_z_buffer();

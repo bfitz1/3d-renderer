@@ -117,6 +117,21 @@ void render_color_buffer(void) {
     SDL_RenderCopy(renderer, color_buffer_texture, NULL, NULL);
 }
 
+void render_z_buffer(void) {
+    // Place z-buffer values into color buffer as RGBA in order to
+    // visualize depth
+    for (int y = 0; y < window_height; y++) {
+        for (int x = 0; x < window_width; x++) {
+            if (z_buffer[window_width * y + x] < 1.0) {
+                uint8_t c = 0xFF * (1 - z_buffer[window_width * y + x]);
+                color_buffer[window_width * y + x] = 0xFF000000 | (c << 16) | (c << 8) | c;
+            }
+        }
+    }
+
+    render_color_buffer();
+}
+
 void clear_color_buffer(uint32_t color) {
     for (int y = 0; y < window_height; y++) {
         for (int x = 0; x < window_width; x++) {
