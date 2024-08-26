@@ -28,7 +28,8 @@ void setup(char *model, char *texture) {
     cull_backfaces = true;
 
     // Allocate memory (in bytes) to hold the color buffer
-    color_buffer = (uint32_t *) malloc(sizeof (uint32_t) * window_width * window_height);
+    color_buffer = (uint32_t *) malloc(sizeof(uint32_t) * window_width * window_height);
+    z_buffer = (float *) malloc(sizeof(float) * window_width * window_height);
 
     // Create an SDL texture to display the color buffer
     color_buffer_texture = SDL_CreateTexture(
@@ -107,8 +108,8 @@ void update(void) {
     // Initialize the array of triangles to render
     triangles_to_render = NULL;
 
-    // mesh.rotation.x += 0.005;
-    mesh.rotation.y += 0.003;
+    mesh.rotation.x += 0.005;
+    // mesh.rotation.y += 0.003;
     // mesh.rotation.z += 0.002;
     // mesh.scale.x += 0.002;
     // mesh.scale.y += 0.001;
@@ -320,7 +321,9 @@ void render(void) {
     array_free(triangles_to_render);
 
     render_color_buffer();
+
     clear_color_buffer(0xFF000000);
+    clear_z_buffer();
 
     SDL_RenderPresent(renderer);
 }
@@ -328,6 +331,7 @@ void render(void) {
 // Free any dynamically-allocated memory
 void free_resources(void) {
     free(color_buffer);
+    free(z_buffer);
     upng_free(png_texture);
     array_free(mesh.faces);
     array_free(mesh.vertices);

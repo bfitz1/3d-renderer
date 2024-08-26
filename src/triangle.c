@@ -98,7 +98,16 @@ void draw_texel(
     // Guard against buffer overflow by wrapping overshooting coordinates
     int i = texture_width * tex_y + tex_x;
     int m = texture_width * texture_height;
-    draw_pixel(x, y, texture[i % m]);
+
+    // Adjust 1/w so the pixels that are closer have smaller values
+    float inv_interpolated_reciprocal_w = 1 - interpolated_reciprocal_w;
+    
+    // Only draw the pixel if the depth value is less than the current one
+    if (inv_interpolated_reciprocal_w < z_buffer[window_width * y + x]) {
+        // Update the color and z-buffers
+        draw_pixel(x, y, texture[i % m]);
+        z_buffer[window_width * y + x] = inv_interpolated_reciprocal_w;
+    }
 }
 
 void draw_filled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
