@@ -22,7 +22,7 @@ mat4_t proj_matrix;
 bool is_running = false;
 int previous_frame_time = 0;
 
-void setup(void) {
+void setup(char *model, char *texture) {
     // Configure some render options
     display_mode = MODE_SOLID;
     cull_backfaces = true;
@@ -51,10 +51,10 @@ void setup(void) {
 
     // Load the cube values in the mesh data structure
     // load_cube_mesh_data();
-    load_obj_file_data("./assets/cow.obj");
+    load_obj_file_data(model);
 
     // Load the texture information from an external PNG file
-    load_png_texture_data("./assets/cube-tnt.png");
+    load_png_texture_data(texture);
 }
 
 void process_input(void) {
@@ -107,9 +107,9 @@ void update(void) {
     // Initialize the array of triangles to render
     triangles_to_render = NULL;
 
-    //mesh.rotation.x += 0.005;
+    // mesh.rotation.x += 0.005;
     mesh.rotation.y += 0.003;
-    //mesh.rotation.z += 0.002;
+    // mesh.rotation.z += 0.002;
     // mesh.scale.x += 0.002;
     // mesh.scale.y += 0.001;
     // mesh.translation.x += 0.01;
@@ -333,10 +333,18 @@ void free_resources(void) {
     array_free(mesh.vertices);
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    char *model = "./assets/cube.obj";
+    char *texture = "./assets/cube-tnt.png";
+
+    if (argc == 3) {
+        model = argv[1];
+        texture = argv[2];
+    }
+
     is_running = initialize_window();
 
-    setup();
+    setup(model, texture);
 
     while (is_running) {
         process_input();
