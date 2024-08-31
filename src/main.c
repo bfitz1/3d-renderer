@@ -14,7 +14,9 @@
 #include "texture.h"
 #include "upng.h"
 
-triangle_t *triangles_to_render = NULL;
+#define MAX_TRIANGLES_PER_MESH 10000
+triangle_t triangles_to_render[MAX_TRIANGLES_PER_MESH];
+int num_triangles_to_render = 0;
 
 vec3_t camera_position = { .x = 0, .y = 0, .z = 0 };
 mat4_t proj_matrix;
@@ -106,8 +108,8 @@ void update(void) {
 
     previous_frame_time = SDL_GetTicks();
 
-    // Initialize the array of triangles to render
-    triangles_to_render = NULL;
+    // Initialize the counter of triangles to render for the current frame
+    num_triangles_to_render = 0;
 
     mesh.rotation.x += 0.005;
     mesh.rotation.y += 0.003;
@@ -226,7 +228,10 @@ void update(void) {
         };
 
         // Save the projected triangle in the array of triangles to render
-        array_push(triangles_to_render, projected_triangle);
+        if (num_triangles_to_render < MAX_TRIANGLES_PER_MESH) {
+            triangles_to_render[num_triangles_to_render] = projected_triangle;
+            num_triangles_to_render += 1;
+        }
     }
 }
 
@@ -236,8 +241,7 @@ void render(void) {
     draw_checker(180 / 4 /* GCD scaled down */);
 
     // Loop all projected points and render them
-    int num_triangles = array_length(triangles_to_render);
-    for (int i = 0; i < num_triangles; i++) {
+    for (int i = 0; i < num_triangles_to_render; i++) {
         triangle_t triangle = triangles_to_render[i];
 
         if (display_mode & MODE_SOLID) {
@@ -307,9 +311,6 @@ void render(void) {
         }
 
     }
-
-    // Clear the array of triangles to render every frame loop
-    array_free(triangles_to_render);
 
     if (show_depth) {
         render_z_buffer();
