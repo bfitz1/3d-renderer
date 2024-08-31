@@ -32,6 +32,9 @@ Also, maybe try tackling anti-aliasing?
 - [ ] Wu
 - [ ] Gupta-Sproull
 
+Actually, both of those may require me to look into subpixel rendering.
+- [ ] Subpixel Rendering
+
 ### Shading Algorithms
 IIRC any smooth-shading algorithm is going to require the introduction of
 vertex normals, which should be provided in a mesh's OBJ file.
