@@ -27,6 +27,7 @@ mat4_t view_matrix;
 
 bool is_running = false;
 int previous_frame_time = 0;
+float delta_time = 0;
 
 void setup(char *model, char *texture) {
     // Configure some render options
@@ -106,6 +107,9 @@ void update(void) {
         SDL_Delay(time_to_wait);
     }
 
+    // Get a delta time factor converted to seconds to be used to update our game objects
+    delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
+
     // Discouraged; use a proper delay function so the CPU can focus on
     // other tasks if needed
     // while (!SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME));
@@ -115,12 +119,12 @@ void update(void) {
     // Initialize the counter of triangles to render for the current frame
     num_triangles_to_render = 0;
 
-    mesh.rotation.x += 0.005;
-    mesh.rotation.y += 0.000;
-    mesh.rotation.z += 0.000;
-    // mesh.scale.x += 0.002;
-    // mesh.scale.y += 0.001;
-    // mesh.translation.x += 0.01;
+    mesh.rotation.x += 0.6 * delta_time;
+    mesh.rotation.y += 0.6 * delta_time;;
+    mesh.rotation.z += 0.5 * delta_time;;
+    // mesh.scale.x += 0.002 * delta_time;;
+    // mesh.scale.y += 0.001 * delta_time;;
+    // mesh.translation.x += 0.01 * delta_time;;
     mesh.translation.z = 4.0;
 
     // Create a scale and translation matrix that will be used to multiply the mesh vertices
@@ -136,8 +140,8 @@ void update(void) {
     mat4_t view_matrix = mat4_look_at(camera.position, target, up);
 
     // Change the camera position per animation frame
-    camera.position.x += 0.008;
-    camera.position.y += 0.008;
+    camera.position.x += 0.08 * delta_time;
+    camera.position.y += 0.08 * delta_time;
 
     // Create a world matrix combining scale, rotation, and translation matrices
     // Using matrices also means we can lift these computations outside of the loop
