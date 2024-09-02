@@ -76,8 +76,10 @@ void process_input(void) {
         break;
     case SDL_KEYDOWN:
         switch (event.key.keysym.sym) {
+        // Process controls
         case SDLK_ESCAPE:
             is_running = false; break;
+        // Display modes
         case SDLK_1:
             display_mode = MODE_WIREDOT; break;
         case SDLK_2: 
@@ -90,10 +92,28 @@ void process_input(void) {
             display_mode = MODE_TEXTURE; break;
         case SDLK_6:
             display_mode = MODE_TEXTUREWIRE; break;
+        // Display options
         case SDLK_c:
             cull_backfaces = !cull_backfaces; break;
         case SDLK_z:
             show_depth = !show_depth; break;
+        // Camera movement controls
+        case SDLK_w:
+            camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
+            camera.position = vec3_add(camera.position, camera.forward_velocity);
+            break;
+        case SDLK_a:
+            camera.yaw -= 1.0 * delta_time; break;
+        case SDLK_s:
+            camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
+            camera.position = vec3_sub(camera.position, camera.forward_velocity);
+            break;
+        case SDLK_d:
+            camera.yaw += 1.0 * delta_time; break;
+        case SDLK_UP: 
+            camera.position.y += 3.0 * delta_time; break;
+        case SDLK_DOWN: 
+            camera.position.y -= 3.0 * delta_time; break;
         }
         break;
     }
@@ -119,13 +139,13 @@ void update(void) {
     // Initialize the counter of triangles to render for the current frame
     num_triangles_to_render = 0;
 
-    mesh.rotation.x += 0.6 * delta_time;
-    mesh.rotation.y += 0.6 * delta_time;;
-    mesh.rotation.z += 0.5 * delta_time;;
+    // mesh.rotation.x += 0.6 * delta_time;
+    // mesh.rotation.y += 0.6 * delta_time;;
+    // mesh.rotation.z += 0.5 * delta_time;;
     // mesh.scale.x += 0.002 * delta_time;;
     // mesh.scale.y += 0.001 * delta_time;;
     // mesh.translation.x += 0.01 * delta_time;;
-    mesh.translation.z = 4.0;
+    mesh.translation.z = 5.0;
 
     // Create a scale and translation matrix that will be used to multiply the mesh vertices
     mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -134,14 +154,18 @@ void update(void) {
     mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
     mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
 
-    // Create the view matrix looking at a hard-coded target point
-    vec3_t target = { 0, 0, 4 };
-    vec3_t up = { 0, 1, 0 };
-    mat4_t view_matrix = mat4_look_at(camera.position, target, up);
+    // Compute the camera direction to determine the target point
+    vec3_t target = { 0, 0, 1 };
+    mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw);
+    camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));
 
-    // Change the camera position per animation frame
-    camera.position.x += 0.08 * delta_time;
-    camera.position.y += 0.08 * delta_time;
+    // Offset the camera position in the direction where the camera is pointing at
+    target = vec3_add(camera.position, camera.direction);
+    
+    // Create the view matrix looking at a hard-coded target point
+    vec3_t up_direction = { 0, 1, 0 };
+
+    mat4_t view_matrix = mat4_look_at(camera.position, target, up_direction);
 
     // Create a world matrix combining scale, rotation, and translation matrices
     // Using matrices also means we can lift these computations outside of the loop
