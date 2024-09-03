@@ -14,6 +14,7 @@
 #include "texture.h"
 #include "upng.h"
 #include "camera.h"
+#include "clipping.h"
 
 // 
 #define MAX_TRIANGLES_PER_MESH 10000
@@ -54,6 +55,9 @@ void setup(char *model, char *texture) {
     float znear = 0.1;
     float zfar = 100.0;
     proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
+
+    // Initialize frustum planes with a point and a normal
+    init_frustum_planes(fov, znear, zfar);
 
     // Manually load the hardcoded texture data from the static array
     // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
