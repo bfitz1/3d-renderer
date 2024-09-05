@@ -11,7 +11,11 @@ revisiting.
 It's not the focus of the course clearly, but there's value to be had in
 understanding how to use it well.
 
-### Perspective Math
+### Debug Mode
+It would be nice to present on-screen diagnostic information while the program
+is running, instead of resorting to printf in the terminal.
+
+### Perspective Transform Math
 Probably the trickiest part given that it's the most likely to be inconsistent
 across engines and platforms since everyone creates their own conventions! Fun!
 
