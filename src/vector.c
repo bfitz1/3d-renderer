@@ -54,6 +54,12 @@ vec3_t vec3_new(float x, float y, float z) {
     return (vec3_t) { x, y, z };
 }
 
+// Do we really need this? Because vec3_t is a struct of primitive types, we
+// should be able to create a copy just through dereferencing.
+vec3_t vec3_clone(vec3_t *v) {
+    return (vec3_t) { v->x, v->y, v->z };
+}
+
 float vec3_length(vec3_t v) {
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }

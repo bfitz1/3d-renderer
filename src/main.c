@@ -183,6 +183,8 @@ void update(void) {
     // Loop all triangle faces
     int num_faces = array_length(mesh.faces);
     for (int i = 0; i < num_faces; i++) {
+        if (i != 4) continue; // Temporary to better visualize clipping
+
         face_t mesh_face = mesh.faces[i];
         
         vec3_t face_vertices[3];
@@ -237,6 +239,20 @@ void update(void) {
                 continue;
             }
         }
+
+        // Create a polygon from the orignal transformed triangle to be clipped
+        polygon_t polygon = create_polygon_from_triangle(
+            vec3_from_vec4(transformed_vertices[0]),
+            vec3_from_vec4(transformed_vertices[1]),
+            vec3_from_vec4(transformed_vertices[2])
+        );
+
+        // Clip the polygon (in place) and return a new polygon with potential new vertices
+        clip_polygon(&polygon);
+
+        printf("# of polygon vertices after clipping: %d\n", polygon.num_vertices);
+
+        // TODO: after clipping, we need to break the polygon in triangles
 
         vec4_t projected_points[3];
 
