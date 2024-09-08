@@ -6,25 +6,25 @@
 #define NUM_PLANES 6
 plane_t frustum_planes[NUM_PLANES];
 
-void init_frustum_planes(float fov, float znear, float zfar) {
+void init_frustum_planes(float fovy, float fovx, float znear, float zfar) {
     frustum_planes[LEFT_FRUSTUM_PLANE] = (plane_t) {
         .point = { .x = 0, .y = 0, .z = 0 },
-        .normal = { .x = cos(fov/2), .y = 0, .z = sin(fov/2) },
+        .normal = { .x = cos(fovx/2), .y = 0, .z = sin(fovx/2) },
     };
 
     frustum_planes[RIGHT_FRUSTUM_PLANE] = (plane_t) {
         .point = { .x = 0, .y = 0, .z = 0 },
-        .normal = { .x = -cos(fov/2), .y = 0, .z = sin(fov/2) },
+        .normal = { .x = -cos(fovx/2), .y = 0, .z = sin(fovx/2) },
     };
 
     frustum_planes[TOP_FRUSTUM_PLANE] = (plane_t) {
         .point = { .x = 0, .y = 0, .z = 0 },
-        .normal = { .x = 0, .y = -cos(fov/2), .z = sin(fov/2) },
+        .normal = { .x = 0, .y = -cos(fovy/2), .z = sin(fovy/2) },
     };
 
     frustum_planes[BOTTOM_FRUSTUM_PLANE] = (plane_t ){
         .point = { .x = 0, .y = 0, .z = 0 },
-        .normal = { .x = 0, .y = cos(fov/2), .z = sin(fov/2) },
+        .normal = { .x = 0, .y = cos(fovy/2), .z = sin(fovy/2) },
     };
 
     frustum_planes[NEAR_FRUSTUM_PLANE] = (plane_t) {
@@ -99,6 +99,19 @@ void clip_polygon_against_plane(polygon_t *polygon, int plane) {
         polygon->vertices[i] = vec3_clone(&inside_vertices[i]);
     } 
     polygon->num_vertices = num_inside_vertices;
+}
+
+void triangles_from_polygon(polygon_t *polygon, triangle_t triangles[], int *num_triangles) {
+    for (int i = 0; i < polygon->num_vertices-2; i += 1) {
+        int index0 = 0;
+        int index1 = i + 1;
+        int index2 = i + 2;
+
+        triangles[i].points[0] = vec4_from_vec3(polygon->vertices[index0]);
+        triangles[i].points[1] = vec4_from_vec3(polygon->vertices[index1]);
+        triangles[i].points[2] = vec4_from_vec3(polygon->vertices[index2]);
+    }
+    *num_triangles = polygon->num_vertices - 2;
 }
 
 void clip_polygon(polygon_t *polygon) {
