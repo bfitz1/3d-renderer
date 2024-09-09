@@ -32,26 +32,13 @@ float delta_time = 0;
 
 void setup(char *model, char *texture) {
     // Configure some render options
-    display_mode = MODE_TEXTURE;
-    cull_backfaces = true;
-    show_depth = false;
-
-    // Allocate memory (in bytes) to hold the color buffer
-    color_buffer = (uint32_t *) malloc(sizeof(uint32_t) * window_width * window_height);
-    z_buffer = (float *) malloc(sizeof(float) * window_width * window_height);
-
-    // Create an SDL texture to display the color buffer
-    color_buffer_texture = SDL_CreateTexture(
-        renderer,
-        SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_STREAMING,
-        window_width,
-        window_height
-    );
+    set_render_mode(MODE_TEXTURE);
+    set_cull_backfaces(true);
+    set_show_depth(false);
 
     // Initialize the perspective matrix
-    float aspecty = (float)window_height / (float)window_width;    
-    float aspectx = (float)window_width / (float)window_height;    
+    float aspecty = (float)get_window_height() / get_window_width();    
+    float aspectx = (float)get_window_width() / get_window_height();    
     float fovy = 60 * M_PI / 180; // 60deg, or pi/3
     float fovx = atan(tan(fovy / 2) * aspectx) * 2.0;
     float znear = 1.0;
@@ -74,54 +61,54 @@ void setup(char *model, char *texture) {
 
 void process_input(void) {
     SDL_Event event;
-    SDL_PollEvent(&event);
-
-    switch (event.type) {
-    case SDL_QUIT:
-        is_running = false;
-        break;
-    case SDL_KEYDOWN:
-        switch (event.key.keysym.sym) {
-        // Process controls
-        case SDLK_ESCAPE:
-            is_running = false; break;
-        // Display modes
-        case SDLK_1:
-            display_mode = MODE_WIREDOT; break;
-        case SDLK_2: 
-            display_mode = MODE_WIRE; break;
-        case SDLK_3:
-            display_mode = MODE_SOLID; break;
-        case SDLK_4: 
-            display_mode = MODE_SOLIDWIRE; break;
-        case SDLK_5:
-            display_mode = MODE_TEXTURE; break;
-        case SDLK_6:
-            display_mode = MODE_TEXTUREWIRE; break;
-        // Display options
-        case SDLK_c:
-            cull_backfaces = !cull_backfaces; break;
-        case SDLK_z:
-            show_depth = !show_depth; break;
-        // Camera movement controls
-        case SDLK_w:
-            camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
-            camera.position = vec3_add(camera.position, camera.forward_velocity);
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+        case SDL_QUIT:
+            is_running = false;
             break;
-        case SDLK_a:
-            camera.yaw -= 1.0 * delta_time; break;
-        case SDLK_s:
-            camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
-            camera.position = vec3_sub(camera.position, camera.forward_velocity);
+        case SDL_KEYDOWN:
+            switch (event.key.keysym.sym) {
+            // Process controls
+            case SDLK_ESCAPE:
+                is_running = false; break;
+            // Display modes
+            case SDLK_1:
+                set_render_mode(MODE_WIREDOT); break;
+            case SDLK_2: 
+                set_render_mode(MODE_WIRE); break;
+            case SDLK_3:
+                set_render_mode(MODE_SOLID); break;
+            case SDLK_4: 
+                set_render_mode(MODE_SOLIDWIRE); break;
+            case SDLK_5:
+                set_render_mode(MODE_TEXTURE); break;
+            case SDLK_6:
+                set_render_mode(MODE_TEXTUREWIRE); break;
+            // Display options
+            case SDLK_c:
+                toggle_cull_backfaces(); break;
+            case SDLK_z:
+                toggle_show_depth(); break;
+            // Camera movement controls
+            case SDLK_w:
+                camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
+                camera.position = vec3_add(camera.position, camera.forward_velocity);
+                break;
+            case SDLK_a:
+                camera.yaw -= 1.0 * delta_time; break;
+            case SDLK_s:
+                camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
+                camera.position = vec3_sub(camera.position, camera.forward_velocity);
+                break;
+            case SDLK_d:
+                camera.yaw += 1.0 * delta_time; break;
+            case SDLK_UP: 
+                camera.position.y += 3.0 * delta_time; break;
+            case SDLK_DOWN: 
+                camera.position.y -= 3.0 * delta_time; break;
+            }
             break;
-        case SDLK_d:
-            camera.yaw += 1.0 * delta_time; break;
-        case SDLK_UP: 
-            camera.position.y += 3.0 * delta_time; break;
-        case SDLK_DOWN: 
-            camera.position.y -= 3.0 * delta_time; break;
         }
-        break;
     }
 }
 
@@ -233,7 +220,7 @@ void update(void) {
         // Compute alignment of camera ray and face normal using the dot product
         float dot_normal_camera = vec3_dot(normal, camera_ray);
 
-        if (cull_backfaces) {
+        if (get_cull_backfaces()) {
             // Bypass triangles looking away from the camera
             if (dot_normal_camera < 0) {
                 continue;
@@ -271,15 +258,15 @@ void update(void) {
                 projected_points[j] = mat4_mul_vec4_project(proj_matrix, triangle_after_clipping.points[j]);
 
                 // Scale into the view
-                projected_points[j].x *= (window_width / 2.);
-                projected_points[j].y *= (window_height / 2.);
+                projected_points[j].x *= (get_window_width() / 2.);
+                projected_points[j].y *= (get_window_height() / 2.);
 
                 // Invert the y values to account for flipped screen y-coordinates
                 projected_points[j].y *= -1;
 
                 // Translate projected point to the middle of the screen
-                projected_points[j].x += (window_width / 2.);
-                projected_points[j].y += (window_height / 2.);
+                projected_points[j].x += (get_window_width() / 2.);
+                projected_points[j].y += (get_window_height() / 2.);
             }
 
             // Calculate the color intensity based on (inverted) light sources and face normals
@@ -311,7 +298,8 @@ void update(void) {
 }
 
 void render(void) {
-    SDL_RenderClear(renderer);
+    clear_color_buffer(0xFF000000);
+    clear_z_buffer();
 
     draw_checker(180 / 4 /* GCD scaled down */);
 
@@ -319,7 +307,7 @@ void render(void) {
     for (int i = 0; i < num_triangles_to_render; i++) {
         triangle_t triangle = triangles_to_render[i];
 
-        if (display_mode & MODE_SOLID) {
+        if (get_render_mode() & MODE_SOLID) {
             // Connect points in the triangle
             draw_filled_triangle(
                 triangle.points[0].x,
@@ -338,7 +326,7 @@ void render(void) {
             );
         }
 
-        if (display_mode & MODE_TEXTURE) {
+        if (get_render_mode() & MODE_TEXTURE) {
             draw_textured_triangle(
                 // P0
                 triangle.points[0].x,
@@ -366,7 +354,7 @@ void render(void) {
             );
         }
 
-        if (display_mode & MODE_WIRE) {
+        if (get_render_mode() & MODE_WIRE) {
             draw_triangle(
                 triangle.points[0].x,
                 triangle.points[0].y,
@@ -378,7 +366,7 @@ void render(void) {
             );
         }
 
-        if (display_mode & MODE_DOT) {
+        if (get_render_mode() & MODE_DOT) {
             // Draw vertex points
             draw_rect(triangle.points[0].x, triangle.points[0].y, 6, 6, 0xFFFF0000);
             draw_rect(triangle.points[1].x, triangle.points[1].y, 6, 6, 0xFFFF0000);
@@ -387,22 +375,15 @@ void render(void) {
 
     }
 
-    if (show_depth) {
+    if (get_show_depth()) {
         render_z_buffer();
     } else {
         render_color_buffer();
     }
-
-    clear_color_buffer(0xFF000000);
-    clear_z_buffer();
-
-    SDL_RenderPresent(renderer);
 }
 
 // Free any dynamically-allocated memory
 void free_resources(void) {
-    free(color_buffer);
-    free(z_buffer);
     upng_free(png_texture);
     array_free(mesh.faces);
     array_free(mesh.vertices);

@@ -52,9 +52,9 @@ void draw_solid_pixel(
     float inv_interpolated_reciprocal_w = 1 - interpolated_reciprocal_w;
     
     // Only draw the pixel if the depth value is less than the current one
-    if (inv_interpolated_reciprocal_w < z_buffer[window_width * y + x]) {
+    if (inv_interpolated_reciprocal_w < get_z_buffer_at(x, y)) {
         draw_pixel(x, y, color);
-        z_buffer[window_width * y + x] = inv_interpolated_reciprocal_w;
+        update_z_buffer_at(x, y, inv_interpolated_reciprocal_w);
     }
 }
 
@@ -171,10 +171,10 @@ void draw_texel(
     float inv_interpolated_reciprocal_w = 1 - interpolated_reciprocal_w;
     
     // Only draw the pixel if the depth value is less than the current one
-    if (inv_interpolated_reciprocal_w < z_buffer[window_width * y + x]) {
+    if (inv_interpolated_reciprocal_w < get_z_buffer_at(x, y)) {
         // Update the color and z-buffers
         draw_pixel(x, y, texture[i % m]);
-        z_buffer[window_width * y + x] = inv_interpolated_reciprocal_w;
+        update_z_buffer_at(x, y, inv_interpolated_reciprocal_w);
     }
 }
 
