@@ -65,16 +65,19 @@ bool initialize_window(void) {
     // Use SDL to query what is the fullscreen max width and height
     SDL_DisplayMode display_mode;
     SDL_GetCurrentDisplayMode(0, &display_mode);
-    window_width = display_mode.w;
-    window_height = display_mode.h;
+    int fullscreen_width = display_mode.w;
+    int fullscreen_height = display_mode.h;
+
+    window_width = fullscreen_width / 4;
+    window_height = fullscreen_height / 4;
 
     // Create an SDL Window
     window = SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        window_width,
-        window_height,
+        fullscreen_width,
+        fullscreen_height,
         SDL_WINDOW_BORDERLESS
     );
     if (!window) {
@@ -191,11 +194,13 @@ void render_z_buffer(void) {
 }
 
 void clear_color_buffer(uint32_t color) {
-    for (int i = 0; i < window_width * window_height; i += 1) color_buffer[i] = color;
+    for (int i = 0; i < window_width * window_height; i += 1)
+        color_buffer[i] = color;
 }
 
 void clear_z_buffer(void) {
-    for (int i = 0; i < window_width * window_height; i += 1) z_buffer[i] = 1.0;
+    for (int i = 0; i < window_width * window_height; i += 1)
+        z_buffer[i] = 1.0;
 }
 
 float get_z_buffer_at(int x, int y) {

@@ -36,6 +36,8 @@ void setup(char *model, char *texture) {
     set_cull_backfaces(true);
     set_show_depth(false);
 
+    init_light(vec3_new(0, 0, 1));
+
     // Initialize the perspective matrix
     float aspecty = (float)get_window_height() / get_window_width();    
     float aspectx = (float)get_window_width() / get_window_height();    
@@ -132,7 +134,7 @@ void update(void) {
     // Initialize the counter of triangles to render for the current frame
     num_triangles_to_render = 0;
 
-    // mesh.rotation.x += 0.6 * delta_time;
+    mesh.rotation.x += 0.6 * delta_time;
     // mesh.rotation.y += 0.6 * delta_time;;
     // mesh.rotation.z += 0.5 * delta_time;;
     // mesh.scale.x += 0.002 * delta_time;;
@@ -270,7 +272,7 @@ void update(void) {
             }
 
             // Calculate the color intensity based on (inverted) light sources and face normals
-            float dot_normal_light = vec3_dot(normal, light.direction);
+            float dot_normal_light = vec3_dot(normal, get_light_direction()); 
             float intensity = -dot_normal_light;
             uint32_t color = light_apply_intensity(mesh_face.color, intensity);
 
@@ -390,8 +392,8 @@ void free_resources(void) {
 }
 
 int main(int argc, char *argv[]) {
-    char *model = "./assets/cube.obj";
-    char *texture = "./assets/cube-tnt.png";
+    char *model = "./assets/f22.obj";
+    char *texture = "./assets/f22.png";
 
     if (argc == 3) {
         model = argv[1];
