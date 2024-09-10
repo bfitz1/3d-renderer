@@ -8,7 +8,7 @@ void init_light(vec3_t direction) {
     light = (light_t) { direction };
 }
 
-vec3_t get_light_direction() {
+vec3_t get_light_direction(void) {
     return light.direction;
 }
 

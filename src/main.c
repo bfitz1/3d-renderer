@@ -16,7 +16,6 @@
 #include "camera.h"
 #include "clipping.h"
 
-// 
 #define MAX_TRIANGLES_PER_MESH 10000
 triangle_t triangles_to_render[MAX_TRIANGLES_PER_MESH];
 int num_triangles_to_render = 0;
@@ -36,7 +35,16 @@ void setup(char *model, char *texture) {
     set_cull_backfaces(true);
     set_show_depth(false);
 
+    // Initialize the light source
     init_light(vec3_new(0, 0, 1));
+
+    // Initialize the camera
+    // I like how less wordy this is, but there is the risk of overly
+    // relying on default behavior i.e I'm assuming unspecified struct
+    // members are zeros.
+    init_camera((camera_t) { 
+        .direction = vec3_new(0, 0, 1),
+    });
 
     // Initialize the perspective matrix
     float aspecty = (float)get_window_height() / get_window_width();    
@@ -93,21 +101,31 @@ void process_input(void) {
                 toggle_show_depth(); break;
             // Camera movement controls
             case SDLK_w:
-                camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
-                camera.position = vec3_add(camera.position, camera.forward_velocity);
+                set_camera_forward_velocity(vec3_mul(get_camera_direction(), 5*delta_time));
+                set_camera_position(vec3_add(get_camera_position(), get_camera_forward_velocity()));
+                break;
+            case SDLK_s:
+                set_camera_forward_velocity(vec3_mul(get_camera_direction(), 5*delta_time));
+                set_camera_position(vec3_sub(get_camera_position(), get_camera_forward_velocity()));
                 break;
             case SDLK_a:
-                camera.yaw -= 1.0 * delta_time; break;
-            case SDLK_s:
-                camera.forward_velocity = vec3_mul(camera.direction, 5 * delta_time);
-                camera.position = vec3_sub(camera.position, camera.forward_velocity);
+                set_camera_yaw(get_camera_yaw() - 1*delta_time);
                 break;
             case SDLK_d:
-                camera.yaw += 1.0 * delta_time; break;
+                set_camera_yaw(get_camera_yaw() + 1*delta_time);
+                break;
+            case SDLK_i:
+                set_camera_pitch(get_camera_pitch() + 1*delta_time);
+                break;
+            case SDLK_k:
+                set_camera_pitch(get_camera_pitch() - 1*delta_time);
+                break;
             case SDLK_UP: 
-                camera.position.y += 3.0 * delta_time; break;
+                set_camera_position(vec3_add(get_camera_position(), vec3_new(0, 3*delta_time, 0)));
+                break;
             case SDLK_DOWN: 
-                camera.position.y -= 3.0 * delta_time; break;
+                set_camera_position(vec3_sub(get_camera_position(), vec3_new(0, 3*delta_time, 0)));
+                break;
             }
             break;
         }
@@ -150,17 +168,18 @@ void update(void) {
     mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
 
     // Compute the camera direction to determine the target point
-    vec3_t target = { 0, 0, 1 };
-    mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw);
-    camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));
+    mat4_t camera_rotation = mat4_identity();
+    camera_rotation = mat4_mul_mat4(mat4_make_rotation_x(get_camera_pitch()), camera_rotation);
+    camera_rotation = mat4_mul_mat4(mat4_make_rotation_y(get_camera_yaw()), camera_rotation);
+    set_camera_direction(vec3_from_vec4(mat4_mul_vec4(camera_rotation, vec4_from_vec3(vec3_new(0, 0, 1)))));
 
     // Offset the camera position in the direction where the camera is pointing at
-    target = vec3_add(camera.position, camera.direction);
+    vec3_t target = vec3_add(get_camera_position(), get_camera_direction());
     
     // Create the view matrix looking at a hard-coded target point
     vec3_t up_direction = { 0, 1, 0 };
 
-    mat4_t view_matrix = mat4_look_at(camera.position, target, up_direction);
+    mat4_t view_matrix = mat4_look_at(get_camera_position(), target, up_direction);
 
     // Create a world matrix combining scale, rotation, and translation matrices
     // Using matrices also means we can lift these computations outside of the loop
