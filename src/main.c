@@ -58,15 +58,9 @@ void setup(char *model, char *texture) {
     // Initialize frustum planes with a point and a normal
     init_frustum_planes(fovy, fovx, znear, zfar);
 
-    // Manually load the hardcoded texture data from the static array
-    // mesh_texture = (uint32_t *)REDBRICK_TEXTURE;
-
-    // Load the cube values in the mesh data structure
-    // load_cube_mesh_data();
-    load_obj_file_data(model);
-
-    // Load the texture information from an external PNG file
-    load_png_texture_data(texture);
+    // Load mesh and texture data
+    load_mesh("./assets/f22.obj", "./assets/f22.png", vec3_new(1, 1, 1), vec3_new(-3, 0, +8), vec3_new(0, 0, 0));
+    load_mesh("./assets/efa.obj", "./assets/efa.png", vec3_new(1, 1, 1), vec3_new(+3, 0, +8), vec3_new(0, 0, 0));
 }
 
 void process_input(void) {
@@ -132,40 +126,13 @@ void process_input(void) {
     }
 }
 
-void update(void) {
-    // It's a black box, but it's preferable to just spinning the CPU uselessly
-    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
-
-    if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
-        SDL_Delay(time_to_wait);
-    }
-
-    // Get a delta time factor converted to seconds to be used to update our game objects
-    delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
-
-    // Discouraged; use a proper delay function so the CPU can focus on
-    // other tasks if needed
-    // while (!SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME));
-
-    previous_frame_time = SDL_GetTicks();
-
-    // Initialize the counter of triangles to render for the current frame
-    num_triangles_to_render = 0;
-
-    mesh.rotation.x += 0.6 * delta_time;
-    // mesh.rotation.y += 0.6 * delta_time;;
-    // mesh.rotation.z += 0.5 * delta_time;;
-    // mesh.scale.x += 0.002 * delta_time;;
-    // mesh.scale.y += 0.001 * delta_time;;
-    // mesh.translation.x += 0.01 * delta_time;;
-    mesh.translation.z = 5.0;
-
+void process_graphics_pipeline_stages(mesh_t *mesh) {
     // Create a scale and translation matrix that will be used to multiply the mesh vertices
-    mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
-    mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
-    mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
-    mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
-    mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
+    mat4_t scale_matrix = mat4_make_scale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
+    mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh->rotation.x);
+    mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh->rotation.y);
+    mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh->rotation.z);
+    mat4_t translation_matrix = mat4_make_translation(mesh->translation.x, mesh->translation.y, mesh->translation.z);
 
     // Compute the camera direction to determine the target point
     mat4_t camera_rotation = mat4_identity();
@@ -191,14 +158,14 @@ void update(void) {
     world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
 
     // Loop all triangle faces
-    int num_faces = array_length(mesh.faces);
+    int num_faces = array_length(mesh->faces);
     for (int i = 0; i < num_faces; i++) {
-        face_t mesh_face = mesh.faces[i];
+        face_t mesh_face = mesh->faces[i];
         
         vec3_t face_vertices[3];
-        face_vertices[0] = mesh.vertices[mesh_face.a];
-        face_vertices[1] = mesh.vertices[mesh_face.b];
-        face_vertices[2] = mesh.vertices[mesh_face.c];
+        face_vertices[0] = mesh->vertices[mesh_face.a];
+        face_vertices[1] = mesh->vertices[mesh_face.b];
+        face_vertices[2] = mesh->vertices[mesh_face.c];
 
         vec4_t transformed_vertices[3];
 
@@ -216,32 +183,16 @@ void update(void) {
             transformed_vertices[j] = transformed_vertex;
         }
 
-        // Check backface culling
-        // Something I didn't realize earlier but is worth stating explicity:
-        // Assume that A -> B -> C is a clockwise rotation
-        vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]);
-        vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]);
-        vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]);
-
-        // Get the vector subtraction of B - A, and C - A
-        vec3_t vector_ab = vec3_sub(vector_b, vector_a);
-        vec3_normalize(&vector_ab);
-        vec3_t vector_ac = vec3_sub(vector_c, vector_a);
-        vec3_normalize(&vector_ac);
-
-        // Compute the face normal using the cross product
-        // IMPORTANT: The order of vectors depends on the coordinate system handedness!
-        vec3_t normal = vec3_cross(vector_ab, vector_ac);
-        vec3_normalize(&normal);
-
-        // Get the camera ray vector
-        vec3_t origin = { 0, 0, 0 };
-        vec3_t camera_ray = vec3_sub(origin, vector_a);
-
-        // Compute alignment of camera ray and face normal using the dot product
-        float dot_normal_camera = vec3_dot(normal, camera_ray);
+        // Get normals for backface culling
+        vec3_t face_normal = get_triangle_normal(transformed_vertices);
 
         if (get_cull_backfaces()) {
+            // Get the camera ray vector
+            vec3_t camera_ray = vec3_sub(vec3_new(0, 0, 0), vec3_from_vec4(transformed_vertices[0]));
+
+            // Compute alignment of camera ray and face normal using the dot product
+            float dot_normal_camera = vec3_dot(face_normal, camera_ray);
+
             // Bypass triangles looking away from the camera
             if (dot_normal_camera < 0) {
                 continue;
@@ -291,7 +242,7 @@ void update(void) {
             }
 
             // Calculate the color intensity based on (inverted) light sources and face normals
-            float dot_normal_light = vec3_dot(normal, get_light_direction()); 
+            float dot_normal_light = vec3_dot(face_normal, get_light_direction()); 
             float intensity = -dot_normal_light;
             uint32_t color = light_apply_intensity(mesh_face.color, intensity);
 
@@ -307,6 +258,7 @@ void update(void) {
                     { triangle_after_clipping.texcoords[2].u, triangle_after_clipping.texcoords[2].v }
                 },
                 .color = color,
+                .texture = mesh->texture,
             };
 
             // Save the projected triangle in the array of triangles to render
@@ -315,6 +267,44 @@ void update(void) {
                 num_triangles_to_render += 1;
             }
         }
+    }
+}
+
+void update(void) {
+    // It's a black box, but it's preferable to just spinning the CPU uselessly
+    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+
+    if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+        SDL_Delay(time_to_wait);
+    }
+
+    // Get a delta time factor converted to seconds to be used to update our game objects
+    delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
+
+    // Discouraged; use a proper delay function so the CPU can focus on
+    // other tasks if needed
+    // while (!SDL_TICKS_PASSED(SDL_GetTicks(), previous_frame_time + FRAME_TARGET_TIME));
+
+    previous_frame_time = SDL_GetTicks();
+
+    // Initialize the counter of triangles to render for the current frame
+    num_triangles_to_render = 0;
+
+    // Loop all meshes in the scene
+    for (int mesh_index = 0; mesh_index < get_num_meshes(); mesh_index += 1) {
+        mesh_t *mesh = get_mesh(mesh_index);
+
+        mesh->rotation.x += 0.6 * delta_time;
+        // mesh.rotation.y += 0.6 * delta_time;;
+        // mesh.rotation.z += 0.5 * delta_time;;
+        // mesh.scale.x += 0.002 * delta_time;;
+        // mesh.scale.y += 0.001 * delta_time;;
+        // mesh.translation.x += 0.01 * delta_time;;
+        // mesh.translation.z = 5.0;
+        
+        process_graphics_pipeline_stages(mesh);
+
+
     }
 }
 
@@ -371,7 +361,7 @@ void render(void) {
                 triangle.texcoords[2].u,
                 triangle.texcoords[2].v,
                 // Texture
-                mesh_texture
+                triangle.texture
             );
         }
 
@@ -388,10 +378,11 @@ void render(void) {
         }
 
         if (get_render_mode() & MODE_DOT) {
+            int dot = 2;
             // Draw vertex points
-            draw_rect(triangle.points[0].x, triangle.points[0].y, 6, 6, 0xFFFF0000);
-            draw_rect(triangle.points[1].x, triangle.points[1].y, 6, 6, 0xFFFF0000);
-            draw_rect(triangle.points[2].x, triangle.points[2].y, 6, 6, 0xFFFF0000);
+            draw_rect(triangle.points[0].x - dot/2, triangle.points[0].y - dot/2, dot, dot, 0xFFFF0000);
+            draw_rect(triangle.points[1].x - dot/2, triangle.points[1].y - dot/2, dot, dot, 0xFFFF0000);
+            draw_rect(triangle.points[2].x - dot/2, triangle.points[2].y - dot/2, dot, dot, 0xFFFF0000);
         }
 
     }
@@ -405,9 +396,8 @@ void render(void) {
 
 // Free any dynamically-allocated memory
 void free_resources(void) {
-    upng_free(png_texture);
-    array_free(mesh.faces);
-    array_free(mesh.vertices);
+    free_meshes();
+    destroy_window();
 }
 
 int main(int argc, char *argv[]) {
@@ -429,7 +419,6 @@ int main(int argc, char *argv[]) {
         render();
     }
     
-    destroy_window();
     free_resources();
 
     return 0;
