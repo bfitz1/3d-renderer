@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <math.h>
 #include <SDL2/SDL.h>
 
 #define FPS 60
@@ -14,6 +15,15 @@
 typedef struct {
     float x, y;
 } vec2_t;
+
+vec2_t vec2_rotate(vec2_t v, vec2_t center, float angle) {
+    v.x -= center.x;
+    v.y -= center.y;
+    return (vec2_t) {
+        .x = (v.x * cos(angle) - v.y * sin(angle)) + center.x,
+        .y = (v.x * sin(angle) + v.y * cos(angle)) + center.y,
+    };
+}
 
 typedef struct {
     uint8_t r, g, b;
@@ -29,10 +39,10 @@ SDL_Texture *color_buffer_texture = NULL;
 bool is_running = true;
 
 vec2_t vertices[4] = {
-    { 100, 20 },
-    { 200, 280 },
-    {  30, 210 },
-    { 125, 450 },
+    { 300, 220 },
+    { 400, 240 },
+    { 230, 410 },
+    { 525, 470 },
 };
 
 color_t colors[3] = {
@@ -42,7 +52,7 @@ color_t colors[3] = {
 };
 
 // Assumes a clockwise orientation of vertices
-int edge_cross(vec2_t *a, vec2_t *b, vec2_t *c) {
+float edge_cross(vec2_t *a, vec2_t *b, vec2_t *c) {
     vec2_t ab = { b->x - a->x, b->y - a->y };
     vec2_t ac = { c->x - a->x, c->y - a->y };
     return ab.x * ac.y - ab.y * ac.x;
@@ -64,32 +74,32 @@ void set_pixel(int x, int y, uint32_t color) {
 
 void fill_triangle(vec2_t *v0, vec2_t *v1, vec2_t *v2) {
     // Find the bounding box containing the entire triangle
-    int xmin = MIN(v0->x, MIN(v1->x, v2->x));
-    int ymin = MIN(v0->y, MIN(v1->y, v2->y));
-    int xmax = MAX(v0->x, MAX(v1->x, v2->x));
-    int ymax = MAX(v0->y, MAX(v1->y, v2->y));
+    int xmin = floor(MIN(v0->x, MIN(v1->x, v2->x)));
+    int ymin = floor(MIN(v0->y, MIN(v1->y, v2->y)));
+    int xmax = ceil(MAX(v0->x, MAX(v1->x, v2->x)));
+    int ymax = ceil(MAX(v0->y, MAX(v1->y, v2->y)));
 
     // Compute the constant delta_s that will be used for the horizontal and vertical steps
-    int delta_w0_col = v1->y - v2->y;
-    int delta_w1_col = v2->y - v0->y;
-    int delta_w2_col = v0->y - v1->y;
+    float delta_w0_col = v1->y - v2->y;
+    float delta_w1_col = v2->y - v0->y;
+    float delta_w2_col = v0->y - v1->y;
 
-    int delta_w0_row = v2->x - v1->x;
-    int delta_w1_row = v0->x - v2->x;
-    int delta_w2_row = v1->x - v0->x;
+    float delta_w0_row = v2->x - v1->x;
+    float delta_w1_row = v0->x - v2->x;
+    float delta_w2_row = v1->x - v0->x;
 
     // Parallelogram area is fine since that extra 1/2 term gets
     // divided away later
     float area = edge_cross(v0, v1, v2);
 
-    int bias0 = is_top_left(v1, v2) ? 0 : -1;
-    int bias1 = is_top_left(v2, v0) ? 0 : -1;
-    int bias2 = is_top_left(v0, v1) ? 0 : -1;
+    float bias0 = is_top_left(v1, v2) ? 0 : -0.0001;
+    float bias1 = is_top_left(v2, v0) ? 0 : -0.0001;
+    float bias2 = is_top_left(v0, v1) ? 0 : -0.0001;
     
-    vec2_t p0 = { xmin, ymin };
-    int w0_row = edge_cross(v1, v2, &p0) + bias0;
-    int w1_row = edge_cross(v2, v0, &p0) + bias1;
-    int w2_row = edge_cross(v0, v1, &p0) + bias2;
+    vec2_t p0 = { xmin + 0.5f, ymin + 0.5f };
+    float w0_row = edge_cross(v1, v2, &p0) + bias0;
+    float w1_row = edge_cross(v2, v0, &p0) + bias1;
+    float w2_row = edge_cross(v0, v1, &p0) + bias2;
 
     for (int y = ymin; y < ymax; y += 1) {
         float w0 = w0_row;
@@ -203,10 +213,14 @@ void process_input(void) {
 void render(void) {
     clear_buffer(0xFF000000);
 
-    vec2_t v0 = vertices[0];
-    vec2_t v1 = vertices[1]; 
-    vec2_t v2 = vertices[2];
-    vec2_t v3 = vertices[3];
+    float angle = SDL_GetTicks() / 1000.0f * 0.1;
+
+    vec2_t center = { WIDTH / 2.0f, HEIGHT / 2.0f };
+
+    vec2_t v0 = vec2_rotate(vertices[0], center, angle);
+    vec2_t v1 = vec2_rotate(vertices[1], center, angle);
+    vec2_t v2 = vec2_rotate(vertices[2], center, angle);
+    vec2_t v3 = vec2_rotate(vertices[3], center, angle);
     
     fill_triangle(&v0, &v1, &v2);
     fill_triangle(&v3, &v2, &v1);
