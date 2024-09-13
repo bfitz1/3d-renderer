@@ -5,7 +5,7 @@ springboard into other areas.
 
 ## Additional Topics/Challenges
 I want to maintain the pace that I have, but there are definitely topics worth
-revisiting.
+revisiting as well as relevant new areas to tackle.
 
 ### SDL (in general)
 It's not the focus of the course clearly, but there's value to be had in
@@ -14,6 +14,13 @@ understanding how to use it well.
 ### Debug Mode
 It would be nice to present on-screen diagnostic information while the program
 is running, instead of resorting to printf in the terminal.
+
+### Hot Loading
+Being able to save and resume state would be a time saver I think.
+
+### Performance Best Practices
+I need to research what this entails, but some of the choices made were definitely
+made out of convenience or pedagogical efficiency.
 
 ### Perspective Transform Math
 Probably the trickiest part given that it's the most likely to be inconsistent
