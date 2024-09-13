@@ -62,34 +62,44 @@ void set_pixel(int x, int y, uint32_t color) {
     color_buffer[WIDTH * y + x] = color;
 }
 
-void fill_triangle(vec2_t *a, vec2_t *b, vec2_t *c) {
+void fill_triangle(vec2_t *v0, vec2_t *v1, vec2_t *v2) {
     // Find the bounding box containing the entire triangle
-    int xmin = MIN(a->x, MIN(b->x, c->x));
-    int ymin = MIN(a->y, MIN(b->y, c->y));
-    int xmax = MAX(a->x, MAX(b->x, c->x));
-    int ymax = MAX(a->y, MAX(b->y, c->y));
+    int xmin = MIN(v0->x, MIN(v1->x, v2->x));
+    int ymin = MIN(v0->y, MIN(v1->y, v2->y));
+    int xmax = MAX(v0->x, MAX(v1->x, v2->x));
+    int ymax = MAX(v0->y, MAX(v1->y, v2->y));
+
+    // Compute the constant delta_s that will be used for the horizontal and vertical steps
+    int delta_w0_col = v1->y - v2->y;
+    int delta_w1_col = v2->y - v0->y;
+    int delta_w2_col = v0->y - v1->y;
+
+    int delta_w0_row = v2->x - v1->x;
+    int delta_w1_row = v0->x - v2->x;
+    int delta_w2_row = v1->x - v0->x;
 
     // Parallelogram area is fine since that extra 1/2 term gets
     // divided away later
-    float area = edge_cross(a, b, c);
+    float area = edge_cross(v0, v1, v2);
 
-    int bias0 = is_top_left(b, c) ? 0 : -1;
-    int bias1 = is_top_left(c, a) ? 0 : -1;
-    int bias2 = is_top_left(a, b) ? 0 : -1;
+    int bias0 = is_top_left(v1, v2) ? 0 : -1;
+    int bias1 = is_top_left(v2, v0) ? 0 : -1;
+    int bias2 = is_top_left(v0, v1) ? 0 : -1;
     
-    for (int x = xmin; x < xmax; x += 1) {
-        for (int y = ymin; y < ymax; y += 1) {
-            // Point under consideratio
-            vec2_t p = { x, y };
+    vec2_t p0 = { xmin, ymin };
+    int w0_row = edge_cross(v1, v2, &p0) + bias0;
+    int w1_row = edge_cross(v2, v0, &p0) + bias1;
+    int w2_row = edge_cross(v0, v1, &p0) + bias2;
 
-            // Used for computing barycentric weights and testing if the
-            // point is inside the triangle
-            int w0 = edge_cross(b, c, &p) + bias0;
-            int w1 = edge_cross(c, a, &p) + bias1;
-            int w2 = edge_cross(a, b, &p) + bias2;
-
+    for (int y = ymin; y < ymax; y += 1) {
+        float w0 = w0_row;
+        float w1 = w1_row;
+        float w2 = w2_row;
+        for (int x = xmin; x < xmax; x += 1) {
             // A point is inside the triangle if it is on the "right" side
             // of every edge going clockwise.
+            // Note that these values are constant along their edge, so we can
+            // recompute them more efficiently using deltas
             bool is_inside = w0 >= 0 && w1 >= 0 && w2 >= 0;
             if (is_inside) {
                 // Barycentric weights
@@ -105,7 +115,13 @@ void fill_triangle(vec2_t *a, vec2_t *b, vec2_t *c) {
 
                 set_pixel(x, y, interpolated_color);
             }
+            w0 += delta_w0_col;
+            w1 += delta_w1_col;
+            w2 += delta_w2_col;
         }
+        w0_row += delta_w0_row;
+        w1_row += delta_w1_row;
+        w2_row += delta_w2_row;
     }
 }
 
